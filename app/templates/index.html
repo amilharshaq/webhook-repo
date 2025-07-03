@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GitHub Webhook Events</title>
+</head>
+<body>
+  <h1>GitHub Events</h1>
+  <div id="events">Loading...</div>
+
+  <script>
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+
+      const day = date.getUTCDate();
+      const daySuffix =
+        day === 1 || day === 21 || day === 31 ? 'st'
+        : day === 2 || day === 22 ? 'nd'
+        : day === 3 || day === 23 ? 'rd'
+        : 'th';
+
+      const monthNames = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+      ];
+      const month = monthNames[date.getUTCMonth()];
+      const year = date.getUTCFullYear();
+
+      let hours = date.getUTCHours();
+      const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      if (hours === 0) hours = 12;
+
+      return `${day}${daySuffix} ${month} ${year} - ${hours}:${minutes} ${ampm} UTC`;
+    }
+
+    async function fetchEvents() {
+      const res = await fetch('/webhook/events');  // ✅ Matches your Blueprint
+      const data = await res.json();
+      const container = document.getElementById('events');
+      container.innerHTML = '';
+
+      if (data.length === 0) {
+        container.innerHTML = '<p>No events yet.</p>';
+        return;
+      }
+
+      data.forEach(event => {
+        let text = '';
+        const formattedDate = formatDate(event.timestamp);
+
+        if (event.action === 'PUSH') {
+          text = `"${event.author}" pushed to "${event.to_branch}" on ${formattedDate}`;
+        } else if (event.action === 'PULL_REQUEST') {
+          text = `"${event.author}" submitted a pull request from "${event.from_branch}" to "${event.to_branch}" on ${formattedDate}`;
+        } else if (event.action === 'MERGE') {
+          text = `"${event.author}" merged branch "${event.from_branch}" to "${event.to_branch}" on ${formattedDate}`;
+        } else {
+          text = `Unknown event type`;
+        }
+
+        const p = document.createElement('p');
+        p.textContent = text;
+        container.appendChild(p);
+      });
+    }
+
+    fetchEvents();
+    setInterval(fetchEvents, 15000);  // Refresh every 15 seconds
+  </script>
+</body>
+</html>
