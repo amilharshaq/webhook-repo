@@ -1,1 +1,1 @@
-this is the rewpository which contains the flask code for the web hook
+this is the repository which contains the flask code for the web hook
